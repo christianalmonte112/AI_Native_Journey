@@ -1,77 +1,37 @@
-import random
-import time
+# 1. Start with an empty dictionary to store everyone's history.
+#    This is our main "filing cabinet".
+user_history = {}
 
-def magic_8_ball():
-    """
-    This function simulates a Magic 8-Ball game.
-    It prompts the user to ask a question and gives a random answer.
-    The game continues until the user decides to quit.
-    """
-    
-    # A list of classic Magic 8-Ball answers
-    answers = [
-        # Positive Answers
-        "It is certain.",
-        "It is decidedly so.",
-        "Without a doubt.",
-        "Yes – definitely.",
-        "You may rely on it.",
-        "As I see it, yes.",
-        "Most likely.",
-        "Outlook good.",
-        "Yes.",
-        "Signs point to yes.",
-        
-        # Non-committal Answers
-        "Reply hazy, try again.",
-        "Ask again later.",
-        "Better not tell you now.",
-        "Cannot predict now.",
-        "Concentrate and ask again.",
+# --- Alice plays ---
+username_alice = "Alice"
+first_answer_for_alice = "It is certain."
 
-        # Negative Answers
-        "Don't count on it.",
-        "My reply is no.",
-        "My sources say no.",
-        "Outlook not so good.",
-        "Very doubtful."
-    ]
+# 2. Since Alice is a new player, we create a new "folder" (key) for her.
+#    The value is a list containing her first answer.
+user_history[username_alice] = [first_answer_for_alice]
 
-    print("🔮 Welcome to the Magic 8-Ball! 🔮")
-    print("Ask me any yes/no question, and I will reveal your destiny.")
-    print("Type 'quit' or 'exit' to leave the game.\n")
+# --- Bob plays ---
+username_bob = "Bob"
+answer_for_bob = "Outlook good."
 
-    # Main game loop
-    while True:
-        # Get the user's question
-        question = input("What is your question? > ")
-
-        # Check if the user wants to quit
-        if question.lower() in ['quit', 'exit']:
-            print("May your future be bright. Goodbye!")
-            break
-
-        # Check if the user actually entered a question
-        if not question.strip():
-            print("You must ask a question to receive an answer. Please try again.\n")
-            continue
-            
-        # Add a little suspense...
-        print("\nHmm, let me concentrate...")
-        time.sleep(1) # Pause for 1 second
-        print("Shaking the ball...")
-        time.sleep(1.5) # Pause for 1.5 seconds
-
-        # Choose a random answer from the list
-        chosen_answer = random.choice(answers)
-        
-        print("\n✨ The Magic 8-Ball says: ✨")
-        print(f"   {chosen_answer}\n")
-        
-        # Prepare for the next question
-        print("------------------------------------")
+# 3. Bob is also a new player, so we create a new folder for him.
+user_history[username_bob] = [answer_for_bob]
 
 
-# Run the game when the script is executed
-if __name__ == "__main__":
-    magic_8_ball()
+# --- Alice plays again ---
+second_answer_for_alice = "My reply is no."
+
+# 4. Alice already exists in our history. We go to her folder (key)
+#    and just add the new answer to her existing list.
+user_history[username_alice].append(second_answer_for_alice)
+
+
+# 5. Let's see our organized data structure!
+print("--- User History ---")
+print(user_history)
+
+# You can easily access a specific user's history
+print("\nJust Alice's answers:")
+print(user_history["Alice"])
+
+
