@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic 8-Ball</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #ff4500; /* Orange-red from graffiti */
+            --secondary-color: #1e90ff; /* Dodger blue from graffiti */
+            --text-color: #fff;
+            --container-bg: rgba(0, 0, 0, 0.8);
+            --disabled-opacity: 0.5;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            /* Using the GitHub raw link you provided */
+            background-image: url('https://raw.githubusercontent.com/christianalmonte112/AI_Native_Journey/refs/heads/main/fongs%20bathroom.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            text-align: center;
+            background-color: var(--container-bg);
+            padding: 2em;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+            border: 1px solid #444;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .user-management {
+            margin-bottom: 2em;
+        }
+
+        #usernameInput {
+            padding: 10px;
+            width: 60%;
+            border: 1px solid var(--primary-color);
+            border-radius: 8px;
+            background: #333;
+            color: var(--text-color);
+            font-family: inherit;
+        }
+
+        #setUserButton {
+            padding: 10px 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-family: inherit;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        #setUserButton:hover {
+            transform: scale(1.05);
+        }
+        
+        #currentUserDisplay {
+            margin-top: 1em;
+            font-size: 1.2em;
+            color: var(--primary-color);
+            font-weight: bold;
+            min-height: 1.5em; /* Prevent layout shift */
+        }
+        
+        .game-locked {
+            opacity: var(--disabled-opacity);
+            pointer-events: none; /* Prevents clicks */
+        }
+
+        #eight-ball-container {
+            perspective: 1000px;
+        }
+        
+        .eight-ball {
+            background: #111;
+            border-radius: 50%;
+            width: 250px;
+            height: 250px;
+            margin: 2em auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset -10px -5px 20px rgba(255,255,255,0.05),
+                        0 10px 20px rgba(0,0,0,0.3);
+            cursor: pointer;
+            position: relative;
+            border: 1px solid #333;
+            transition: transform 0.5s ease-in-out;
+        }
+        
+        .eight-ball.shake {
+            animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        .answer-window {
+            width: 140px;
+            height: 140px;
+            background-color: #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .answer-triangle {
+            width: 0;
+            height: 0;
+            border-left: 60px solid transparent;
+            border-right: 60px solid transparent;
+            border-bottom: 105px solid #2d5a9a;
+            position: relative;
+        }
+
+        #answer {
+            color: #b0c4de;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 16px;
+            font-weight: bold;
+            width: 120px;
+            text-align: center;
+            position: absolute;
+            top: 60px;
+            left: -60px;
+            opacity: 0;
+            transition: opacity 0.5s ease-in 0.5s;
+        }
+        
+        #answer.visible {
+            opacity: 1;
+        }
+
+        #questionInput {
+            width: 80%;
+            padding: 12px;
+            border: 1px solid var(--primary-color);
+            border-radius: 8px;
+            margin-top: 1em;
+            background-color: #333;
+            color: var(--text-color);
+            font-family: inherit;
+            text-align: center;
+        }
+        
+        .history-container {
+            margin-top: 2em;
+        }
+
+        #historyList {
+            list-style: none;
+            padding: 0;
+            max-height: 150px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid #444;
+        }
+
+        #historyList li {
+            padding: 8px;
+            border-bottom: 1px solid #444;
+        }
+        #historyList li:last-child {
+            border-bottom: none;
+        }
+        
+        #clearHistoryButton {
+             padding: 8px 15px;
+             background-color: var(--secondary-color);
+             color: white;
+             border: none;
+             border-radius: 8px;
+             cursor: pointer;
+             margin-top: 1em;
+             font-family: inherit;
+             transition: background-color 0.2s;
+        }
+        #clearHistoryButton:hover {
+            opacity: 0.9;
+        }
+
+        @keyframes shake {
+          10%, 90% { transform: translate3d(-1px, 0, 0); }
+          20%, 80% { transform: translate3d(2px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+          40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- User Management Section -->
+        <div class="user-management">
+            <h2>Enter Your Name</h2>
+            <input type="text" id="usernameInput" placeholder="e.g., Alice">
+            <button id="setUserButton">Set User</button>
+            <div id="currentUserDisplay"></div>
+        </div>
+
+        <!-- This 'gameArea' div will be locked until a user is set -->
+        <div id="gameArea">
+            <!-- 8-Ball Game Section -->
+            <h1>Magic 8-Ball</h1>
+            <div id="eight-ball-container">
+                <div class="eight-ball" id="eightBall">
+                    <div class="answer-window">
+                        <div class="answer-triangle">
+                            <div id="answer">8</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <input type="text" id="questionInput" placeholder="Ask a yes/no question...">
+
+            <!-- History Section -->
+            <div class="history-container" id="historyContainer">
+                <h2>Your Answer History</h2>
+                <ul id="historyList"></ul>
+                <button id="clearHistoryButton">Clear History</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- DOM Element References ---
+            const usernameInput = document.getElementById('usernameInput');
+            const setUserButton = document.getElementById('setUserButton');
+            const currentUserDisplay = document.getElementById('currentUserDisplay');
+            const gameArea = document.getElementById('gameArea');
+            const eightBall = document.getElementById('eightBall');
+            const answerDiv = document.getElementById('answer');
+            const questionInput = document.getElementById('questionInput');
+            const historyContainer = document.getElementById('historyContainer');
+            const historyList = document.getElementById('historyList');
+            const clearHistoryButton = document.getElementById('clearHistoryButton');
+
+            // --- Game Data and State ---
+            let currentUser = null;
+            let userHistory = {}; // Start with an empty object
+
+            const answers = [
+                // Standard Answers
+                "It is certain", "Decidedly so", "Without a doubt", "Yes – definitely",
+                "You may rely on it", "As I see it, yes", "Most likely", "Outlook good",
+                "Yes", "Signs point to yes", "Reply hazy", "Ask again",
+                "Better not tell you", "Cannot predict now", "Concentrate & ask",
+                "Don't count on it", "My reply is no", "Sources say no",
+                "Outlook not so good", "Very doubtful",
+                // Custom Answers
+                "hell nah", "you dumb as fuck for asking that question",
+                "ask your momma", "are you high?"
+            ];
+
+            // --- Main Functions ---
+
+            function loadHistoryFromStorage() {
+                const storedHistory = localStorage.getItem('magic8BallHistory');
+                try {
+                    userHistory = JSON.parse(storedHistory) || {};
+                } catch (e) {
+                    userHistory = {};
+                }
+            }
+
+            function saveHistoryToStorage() {
+                localStorage.setItem('magic8BallHistory', JSON.stringify(userHistory));
+            }
+
+            function renderHistory() {
+                historyList.innerHTML = ''; // Clear current list visually
+                if (currentUser && userHistory[currentUser] && userHistory[currentUser].length > 0) {
+                    historyContainer.style.display = 'block';
+                    userHistory[currentUser].forEach(ans => {
+                        const li = document.createElement('li');
+                        li.textContent = ans;
+                        historyList.appendChild(li);
+                    });
+                } else {
+                    historyContainer.style.display = 'none'; // Hide if no history
+                }
+            }
+            
+            function titleCase(str) {
+                if (!str) return "";
+                return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+            }
+
+            function setUser() {
+                const username = titleCase(usernameInput.value.trim());
+                if (!username) {
+                    alert('Please enter a name.');
+                    return;
+                }
+                currentUser = username;
+                currentUserDisplay.textContent = `Welcome, ${currentUser}!`;
+                
+                if (!userHistory[currentUser]) {
+                    userHistory[currentUser] = []; // Create new history array for a new user
+                }
+                
+                usernameInput.value = ''; // Clear input field
+                gameArea.classList.remove('game-locked'); // Unlock the game area
+                saveHistoryToStorage();
+                renderHistory();
+            }
+
+            function askQuestion() {
+                if (eightBall.classList.contains('shake')) return;
+
+                if (!currentUser) {
+                    alert('Please set a user first!');
+                    return;
+                }
+                if (questionInput.value.trim() === '') {
+                    alert('Please ask a question!');
+                    return;
+                }
+                
+                answerDiv.classList.remove('visible');
+                eightBall.classList.add('shake');
+
+                setTimeout(() => {
+                    const randomIndex = Math.floor(Math.random() * answers.length);
+                    const chosenAnswer = answers[randomIndex];
+                    
+                    answerDiv.textContent = chosenAnswer;
+                    answerDiv.classList.add('visible');
+                    eightBall.classList.remove('shake');
+                    
+                    userHistory[currentUser].push(chosenAnswer);
+                    saveHistoryToStorage();
+                    renderHistory();
+                    questionInput.value = '';
+                }, 1000);
+            }
+
+            function initializeApp() {
+                loadHistoryFromStorage();
+                gameArea.classList.add('game-locked');
+                historyContainer.style.display = 'none';
+                
+                setUserButton.addEventListener('click', setUser);
+                usernameInput.addEventListener('keyup', function(event) {
+                    if (event.key === 'Enter') setUser();
+                });
+
+                eightBall.addEventListener('click', askQuestion);
+                questionInput.addEventListener('keyup', function(event) {
+                     if (event.key === 'Enter') askQuestion();
+                });
+
+                clearHistoryButton.addEventListener('click', () => {
+                    if (currentUser) {
+                        userHistory[currentUser] = [];
+                        saveHistoryToStorage();
+                        renderHistory();
+                    }
+                });
+            }
+            
+            initializeApp();
+        });
+    </script>
+</body>
+</html>
