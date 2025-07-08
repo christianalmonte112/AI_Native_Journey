@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Daily Goal Reminder</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Luxon.js CDN for advanced date/time handling -->
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
+    <style>
+        /* Custom font for a clean look */
+        /* Changed font to Dancing Script */
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&display=swap');
+        body {
+            font-family: 'Dancing Script', cursive; /* Apply Dancing Script */
+            font-size: 1.125rem; /* Increased font size (equivalent to text-lg) */
+            color: #000000; /* Font color set to black */
+            background-color: #8B0000; /* Dark Red default background */
+            background-attachment: fixed; /* Keeps background fixed when scrolling */
+            transition: background-color 0.3s ease-in-out; /* Smooth transition for dark mode */
+        }
+
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background-color: #1a202c; /* Dark background */
+            color: #e2e8f0; /* Light text for dark mode */
+        }
+        body.dark-mode .bg-white {
+            background-color: #2d3748; /* Darker card background */
+            border-color: #4a5568;
+        }
+        body.dark-mode .text-gray-800 {
+            color: #e2e8f0; /* Light text for headings in dark mode */
+        }
+        body.dark-mode .text-gray-700 {
+            color: #cbd5e0; /* Lighter gray for labels in dark mode */
+        }
+        body.dark-mode .text-gray-600 {
+            color: #a0aec0; /* Lighter gray for messages in dark mode */
+        }
+        body.dark-mode .shadow {
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.15);
+        }
+        body.dark-mode .border {
+            border-color: #4a5568;
+        }
+        body.dark-mode .bg-blue-50 {
+            background-color: #4a5568; /* Darker goal display */
+            border-color: #6a7a8a;
+        }
+        body.dark-mode .text-blue-800 {
+            color: #90cdf4; /* Lighter blue text */
+        }
+        body.dark-mode .text-blue-900 {
+            color: #bee3f8; /* Lighter blue text */
+        }
+        body.dark-mode .bg-gray-300 {
+            background-color: #718096; /* Darker clear button */
+            color: #e2e8f0;
+        }
+        body.dark-mode .hover\:bg-gray-400:hover {
+            background-color: #a0aec0;
+        }
+        body.dark-mode .message-box {
+            background-color: #2d3748;
+            color: #e2e8f0;
+        }
+        body.dark-mode .message-box .text-gray-800 {
+            color: #e2e8f0;
+        }
+        body.dark-mode .text-yellow-500 {
+            color: #f6ad55; /* Adjust icon color for dark mode if needed */
+        }
+        body.dark-mode .bg-green-100 {
+            background-color: #2f855a; /* Darker green for confirmation */
+            color: #c6f6d5;
+        }
+        body.dark-mode .bg-yellow-100 {
+            background-color: #d69e2e; /* Darker yellow for reminder */
+            color: #fff;
+        }
+        body.dark-mode .bg-indigo-500 {
+             background-color: #667eea;
+        }
+        body.dark-mode .hover\:bg-indigo-600:hover {
+            background-color: #7f9cf5;
+        }
+
+        /* Animations */
+        @keyframes fade-in-scale {
+            0% { opacity: 0; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .animate-fade-in-scale {
+            animation: fade-in-scale 0.6s ease-out forwards;
+        }
+
+        @keyframes bounce-in {
+            0% { opacity: 0; transform: translateY(-20px) scale(0.9); }
+            60% { opacity: 1; transform: translateY(5px) scale(1.05); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .animate-bounce-in {
+            animation: bounce-in 0.5s ease-out forwards;
+        }
+
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.5s ease-out forwards;
+        }
+
+        .button-active-press:active {
+            transform: scale(0.98);
+            transition: transform 0.1s ease-out;
+        }
+
+        #daily-goal-input:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+            outline: none;
+        }
+
+        /* Custom Message Box */
+        .message-box-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .message-box {
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            text-align: center;
+            max-width: 90%;
+            width: 300px;
+        }
+
+        /* Confetti Effect */
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 999;
+        }
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f0f; /* Default color, overridden by JS */
+            opacity: 0;
+            animation: confetti-fall 3s ease-out forwards;
+        }
+        @keyframes confetti-fall {
+            0% {
+                opacity: 0;
+                transform: translateY(-100vh) rotate(0deg);
+            }
+            10% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(100vh) rotate(720deg);
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div id="main-card" class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md border border-gray-200 bg-opacity-90 backdrop-filter backdrop-blur-sm">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-extrabold text-gray-800 flex items-center justify-center gap-3">
+                <!-- SVG Icon for the header -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 text-yellow-500">
+                    <path d="M12 2.25a.75.75 0 0 1 .75.75v2.25a.75.75 0 0 1-1.5 0V3a.75.75 0 0 1 .75-.75ZM7.5 12a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM18.894 6.166a.75.75 0 0 0-1.06-1.06l-1.596 1.596a.75.75 0 1 0 1.06 1.06l1.596-1.596ZM3.707 9.25a.75.75 0 0 0-1.06 0L.97 10.92a.75.75 0 0 0 1.06 1.06l1.677-1.677a.75.75 0 0 0 0-1.06ZM12 15.75a.75.75 0 0 1 .75.75v2.25a.75.75 0 0 1-1.5 0V16.5a.75.75 0 0 1 .75-.75ZM5.166 18.894a.75.75 0 0 0 1.06-1.06l-1.596-1.596a.75.75 0 1 0-1.06 1.06l1.596 1.596ZM21.03 10.92a.75.75 0 0 0 1.06-1.06l-1.677-1.677a.75.75 0 1 0-1.06 1.06l1.677 1.677ZM18 12a6 6 0 1 1-12 0 6 6 0 0 1 12 0Z" />
+            </svg>
+            Daily Goals
+        </h1>
+            <!-- Dark Mode Toggle -->
+            <button id="theme-toggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200 button-active-press cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                    <path fill-rule="evenodd" d="M9.528 1.718a.75.75 0 0 1 .152 1.09L7.2 6.622l1.835 1.835a.75.75 0 0 1-1.06 1.06L6.14 7.682l-3.03 3.03a.75.75 0 0 1-1.06-1.06l3.03-3.03L2.24 4.97a.75.75 0 0 1 1.09-1.09l2.25 2.25L9.528 1.718Z" clip-rule="evenodd" />
+                    <path fill-rule="evenodd" d="M12 6a6 6 0 0 1 6 6v.758c.712.102 1.405.297 2.076.572.392.167.75.404.986.702a1.75 1.75 0 0 1 0 2.502 1.75 1.75 0 0 1-2.502 0c-.298-.236-.535-.594-.702-.986A7.477 7.477 0 0 0 18.75 13.5c-.235 1.05-.72 2.011-1.488 2.822-.298.313-.568.6-.827.858-.748.72-1.649 1.332-2.651 1.821a.75.75 0 1 1-.504-1.364 6.001 6.001 0 0 0 1.615-.978c.374-.298.7-.665.992-1.044.756-.967 1.24-2.102 1.439-3.328A6.001 6.001 0 0 1 12 18a6 6 0 0 1-6-6v-.758a.75.75 0 0 1 1.5 0V12a4.5 4.5 0 0 0 4.5 4.5 4.5 4.5 0 0 0 4.5-4.5V6Z" clip-rule="evenodd" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Motivational Quote Display -->
+        <div id="quote-display" class="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg text-center text-gray-700 dark:text-gray-300 italic text-sm">
+            "The best way to predict the future is to create it." - Peter Drucker
+        </div>
+
+        <!-- Goal Input Form -->
+        <form id="goal-form" class="mb-6">
+            <label for="daily-goal-input" class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
+                What's your main goal for today?
+            </label>
+            <input
+                type="text"
+                id="daily-goal-input"
+                class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-200 ease-in-out"
+                placeholder="e.g., Finish report, Exercise for 30 mins"
+                required
+            />
+            <label for="reminder-time-input" class="block text-gray-700 dark:text-gray-300 text-sm font-bold mt-4 mb-2">
+                Set a reminder time (optional):
+            </label>
+            <input
+                type="time"
+                id="reminder-time-input"
+                class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-200 ease-in-out"
+            />
+            <button
+                type="submit"
+                class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-300 ease-in-out transform hover:scale-105 button-active-press cursor-pointer"
+            >
+                Add Goal
+            </button>
+        </form>
+
+        <!-- Confirmation Message Display Area -->
+        <div id="confirmation-message" class="hidden mt-4 p-3 bg-green-100 text-green-700 rounded-lg text-center font-medium">
+            Goal added successfully!
+        </div>
+
+        <!-- Active Goals List -->
+        <div class="mb-6">
+            <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Active Goals:</h2>
+            <ul id="active-goals-list" class="space-y-3">
+                <!-- Goals will be dynamically inserted here -->
+            </ul>
+            <p id="no-active-goals-message" class="text-center text-gray-600 dark:text-gray-400 mt-4 hidden">
+                No active goals. Add one above!
+            </p>
+        </div>
+
+        <!-- Completed Goals List -->
+        <div>
+            <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Completed Goals:</h2>
+            <ul id="completed-goals-list" class="space-y-3">
+                <!-- Completed goals will be dynamically inserted here -->
+            </ul>
+            <p id="no-completed-goals-message" class="text-center text-gray-600 dark:text-gray-400 mt-4 hidden">
+                No completed goals yet.
+            </p>
+        </div>
+
+        <!-- Reminder Message Area -->
+        <div id="reminder-message" class="hidden mt-6 p-4 bg-yellow-100 text-yellow-800 rounded-lg border border-yellow-300 shadow-md">
+            <p class="font-semibold text-center">
+                🔔 Reminder: Don't forget your goal: <span id="reminder-goal-text" class="font-bold"></span>
+            </p>
+        </div>
+    </div>
+
+    <!-- Confetti Container -->
+    <div id="confetti-container" class="confetti-container"></div>
+
+    <script>
+        // Luxon DateTime object
+        const DateTime = luxon.DateTime;
+
+        // --- DOM Elements ---
+        const mainCard = document.getElementById('main-card'); // Get the main card element
+        const themeToggle = document.getElementById('theme-toggle');
+        const quoteDisplay = document.getElementById('quote-display');
+        const goalForm = document.getElementById('goal-form');
+        const dailyGoalInput = document.getElementById('daily-goal-input');
+        const reminderTimeInput = document.getElementById('reminder-time-input');
+        const confirmationMessage = document.getElementById('confirmation-message');
+        const activeGoalsList = document.getElementById('active-goals-list');
+        const completedGoalsList = document.getElementById('completed-goals-list');
+        const noActiveGoalsMessage = document.getElementById('no-active-goals-message');
+        const noCompletedGoalsMessage = document.getElementById('no-completed-goals-message');
+        const reminderMessage = document.getElementById('reminder-message');
+        const reminderGoalText = document.getElementById('reminder-goal-text');
+        const confettiContainer = document.getElementById('confetti-container');
+
+        // --- Global State ---
+        let goals = []; // Array to store goal objects: { id, text, completed, reminderTime }
+        let isDarkMode = false;
+        let reminderInterval; // To store the interval ID for clearing
+
+        // --- Motivational Quotes ---
+        const motivationalQuotes = [
+            "The best way to predict the future is to create it. - Peter Drucker",
+            "The only way to do great work is to love what you do. - Steve Jobs",
+            "Believe you can and you're halfway there. - Theodore Roosevelt",
+            "The future belongs to those who believe in the beauty of their dreams. - Eleanor Roosevelt",
+            "It always seems impossible until it's done. - Nelson Mandela",
+            "Start where you are. Use what you have. Do what you can. - Arthur Ashe",
+            "Your limitation—it's only your imagination. - Unknown",
+            "Push yourself, because no one else is going to do it for you. - Unknown",
+            "Great things never come from comfort zones. - Unknown",
+            "Success doesn’t just find you. You have to go out and get it. - Unknown"
+        ];
+
+        // --- Utility Functions ---
+
+        // Function to show a custom message box (replaces alert())
+        function showCustomMessageBox(message) {
+            const overlay = document.createElement('div');
+            overlay.className = 'message-box-overlay';
+            const messageBox = document.createElement('div');
+            messageBox.className = 'message-box bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200';
+            const messageText = document.createElement('p');
+            messageText.className = 'text-lg mb-4';
+            messageText.textContent = message;
+            const okButton = document.createElement('button');
+            okButton.className = 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-300 ease-in-out cursor-pointer';
+            okButton.textContent = 'OK';
+            okButton.onclick = () => { document.body.removeChild(overlay); };
+            messageBox.appendChild(messageText);
+            messageBox.appendChild(okButton);
+            overlay.appendChild(messageBox);
+            document.body.appendChild(overlay);
+        }
+
+        // Save goals and dark mode preference to localStorage
+        function saveState() {
+            localStorage.setItem('goals', JSON.stringify(goals));
+            localStorage.setItem('isDarkMode', JSON.stringify(isDarkMode));
+        }
+
+        // Load goals and dark mode preference from localStorage
+        function loadState() {
+            const savedGoals = localStorage.getItem('goals');
+            if (savedGoals) {
+                goals = JSON.parse(savedGoals);
+            }
+            const savedDarkMode = localStorage.getItem('isDarkMode');
+            if (savedDarkMode !== null) {
+                isDarkMode = JSON.parse(savedDarkMode);
+            }
+        }
+
+        // Render all goals to the UI
+        function renderGoals() {
+            activeGoalsList.innerHTML = ''; // Clear current lists
+            completedGoalsList.innerHTML = '';
+
+            const active = goals.filter(goal => !goal.completed);
+            const completed = goals.filter(goal => goal.completed);
+
+            if (active.length === 0) {
+                noActiveGoalsMessage.classList.remove('hidden');
+            } else {
+                noActiveGoalsMessage.classList.add('hidden');
+                active.forEach(goal => {
+                    const listItem = createGoalListItem(goal);
+                    activeGoalsList.appendChild(listItem);
+                });
+            }
+
+            if (completed.length === 0) {
+                noCompletedGoalsMessage.classList.remove('hidden');
+            } else {
+                noCompletedGoalsMessage.classList.add('hidden');
+                completed.forEach(goal => {
+                    const listItem = createGoalListItem(goal);
+                    completedGoalsList.appendChild(listItem);
+                });
+            }
+        }
+
+        // Create a single goal list item HTML element
+        function createGoalListItem(goal) {
+            const listItem = document.createElement('li');
+            listItem.id = `goal-${goal.id}`;
+            listItem.className = `flex items-center justify-between p-4 rounded-lg shadow-sm transition duration-200 ease-in-out ${
+                goal.completed ? 'bg-green-50 dark:bg-green-800 text-gray-600 dark:text-gray-300 line-through' : 'bg-blue-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+            } animate-fade-in`;
+
+            const goalContent = document.createElement('div');
+            goalContent.className = 'flex-1 mr-4';
+
+            const goalTextElement = document.createElement('p');
+            // Adjusted text color for goal items to ensure black in light mode
+            goalTextElement.className = `font-medium ${goal.completed ? 'text-gray-500 dark:text-gray-400' : 'text-black dark:text-blue-200'}`;
+            goalTextElement.textContent = goal.text;
+            goalContent.appendChild(goalTextElement);
+
+            if (goal.reminderTime && !goal.completed) {
+                const reminderTimeElement = document.createElement('p');
+                reminderTimeElement.className = 'text-xs text-gray-500 dark:text-gray-400 mt-1';
+                reminderTimeElement.textContent = `Reminder: ${goal.reminderTime}`;
+                goalContent.appendChild(reminderTimeElement);
+            }
+
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'flex items-center space-x-2';
+
+            // Complete/Uncomplete Button (Checkbox style)
+            const completeButton = document.createElement('button');
+            completeButton.className = `p-2 rounded-full transition duration-200 ease-in-out button-active-press cursor-pointer ${
+                goal.completed ? 'bg-green-500 hover:bg-green-600 text-white' : 'bg-gray-300 hover:bg-gray-400 text-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-200'
+            }`;
+            completeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="${goal.completed ? 'M9 12.75L11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z' : 'M9 12.75L11.25 15 15 9.75M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10Z'}" />
+            </svg>`;
+            completeButton.onclick = () => toggleGoalComplete(goal.id);
+            actionsDiv.appendChild(completeButton);
+
+            // Delete Button
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'p-2 rounded-full bg-red-500 hover:bg-red-600 text-white transition duration-200 ease-in-out button-active-press cursor-pointer';
+            deleteButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.924a2.25 2.25 0 01-2.244-2.077L5.27 6.23c-.218-.035-.438-.06-.66-.083M15 6H9m3 0c-.837 0-1.5-.663-1.5-1.5S11.163 3 12 3s1.5.663 1.5 1.5S12.837 6 12 6zm-3 0V4.5a1.5 1.5 0 013 0V6m-3 0h3" />
+            </svg>`;
+            deleteButton.onclick = () => deleteGoal(goal.id);
+            actionsDiv.appendChild(deleteButton);
+
+            listItem.appendChild(goalContent);
+            listItem.appendChild(actionsDiv);
+            return listItem;
+        }
+
+        // Add a new goal
+        function addGoal(text, reminderTime) {
+            const newGoal = {
+                id: Date.now(), // Unique ID for the goal
+                text: text,
+                completed: false,
+                reminderTime: reminderTime || null // Store time as "HH:MM" string
+            };
+            goals.push(newGoal);
+            saveState();
+            renderGoals();
+            dailyGoalInput.value = '';
+            reminderTimeInput.value = '';
+            showConfirmationMessage('Goal added successfully!');
+        }
+
+        // Toggle goal completion status
+        function toggleGoalComplete(id) {
+            const goalIndex = goals.findIndex(goal => goal.id === id);
+            if (goalIndex > -1) {
+                goals[goalIndex].completed = !goals[goalIndex].completed;
+                saveState();
+                renderGoals();
+                if (goals[goalIndex].completed) {
+                    playConfetti();
+                }
+            }
+        }
+
+        // Delete a goal
+        function deleteGoal(id) {
+            goals = goals.filter(goal => goal.id !== id);
+            saveState();
+            renderGoals();
+        }
+
+        // Show confirmation message
+        function showConfirmationMessage(message) {
+            confirmationMessage.textContent = message;
+            confirmationMessage.classList.remove('hidden');
+            confirmationMessage.classList.add('animate-bounce-in');
+            setTimeout(() => {
+                confirmationMessage.classList.add('hidden');
+                confirmationMessage.classList.remove('animate-bounce-in');
+            }, 3000);
+        }
+
+        // Display a random motivational quote
+        function displayMotivationalQuote() {
+            const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
+            quoteDisplay.textContent = motivationalQuotes[randomIndex];
+        }
+
+        // Toggle Dark Mode
+        function toggleDarkMode() {
+            isDarkMode = !isDarkMode;
+            if (isDarkMode) {
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
+            saveState();
+        }
+
+        // Confetti effect
+        function playConfetti() {
+            const colors = ['#f0f', '#8f0', '#0ff', '#ff0', '#f00', '#00f'];
+            for (let i = 0; i < 50; i++) { // Generate 50 confetti pieces
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = `${Math.random() * 100}vw`;
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = `${Math.random() * 0.5}s`; // Stagger animation
+                confettiContainer.appendChild(confetti);
+
+                // Remove confetti after animation to prevent DOM clutter
+                confetti.addEventListener('animationend', () => {
+                    confetti.remove();
+                });
+            }
+        }
+
+        // Check for reminders every minute
+        function checkReminders() {
+            // Clear any existing interval to prevent duplicates
+            if (reminderInterval) {
+                clearInterval(reminderInterval);
+            }
+
+            reminderInterval = setInterval(() => {
+                const now = DateTime.local();
+                const currentTime = now.toFormat('HH:mm'); // e.g., "14:30"
+
+                goals.forEach(goal => {
+                    // Only trigger if goal is not completed and reminder time matches
+                    if (!goal.completed && goal.reminderTime === currentTime) {
+                        // To prevent repeated reminders within the same minute,
+                        // we can temporarily disable the reminder for this goal until the next minute.
+                        // A more robust solution for daily reminders would involve storing the last reminded date.
+                        // For this simple app, it will trigger once per minute it matches.
+                        triggerReminderMessage(goal.text);
+                    }
+                });
+            }, 60 * 1000); // Check every minute
+        }
+
+        // Trigger the reminder message display
+        function triggerReminderMessage(goalText) {
+            reminderGoalText.textContent = goalText;
+            reminderMessage.classList.remove('hidden');
+            reminderMessage.classList.add('animate-bounce-in');
+            setTimeout(() => {
+                reminderMessage.classList.add('hidden');
+                reminderMessage.classList.remove('animate-bounce-in');
+            }, 5000); // Display for 5 seconds
+        }
+
+        // --- Event Listeners and Initial Setup ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState(); // Load saved goals and theme
+            renderGoals(); // Display goals
+            displayMotivationalQuote(); // Show initial quote
+            checkReminders(); // Start checking for time-based reminders
+
+            // Apply dark mode immediately if saved preference is true
+            if (isDarkMode) {
+                document.body.classList.add('dark-mode');
+            }
+
+            // Animate the main card on load
+            mainCard.classList.add('animate-fade-in-scale');
+
+            // Add active press effect and cursor pointer to all buttons
+            document.querySelectorAll('button').forEach(button => {
+                button.classList.add('button-active-press', 'cursor-pointer');
+            });
+        });
+
+        goalForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const goalText = dailyGoalInput.value.trim();
+            const reminderTime = reminderTimeInput.value; // "HH:MM" string or empty
+            if (goalText) {
+                addGoal(goalText, reminderTime);
+            } else {
+                showCustomMessageBox('Please enter a goal!');
+            }
+        });
+
+        themeToggle.addEventListener('click', toggleDarkMode);
+
+        // Periodically update motivational quote (e.g., every 30 seconds)
+        setInterval(displayMotivationalQuote, 30000);
+
+    </script>
+</body>
+</html>
